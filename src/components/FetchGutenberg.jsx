@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 const initialUrl = "https://gutendex.com/books/";
+const textBaseUrl = "https://r.jina.ai/http://www.gutenberg.org";
 
 async function fetchBooks(url, signal) {
     const response = await fetch(url, { signal });
@@ -13,7 +14,7 @@ async function fetchBooks(url, signal) {
 }
 
 function getProxiedTextUrl(bookId) {
-    return `/gutenberg/cache/epub/${bookId}/pg${bookId}.txt`;
+    return `${textBaseUrl}/cache/epub/${bookId}/pg${bookId}.txt`;
 }
 
 function FetchGutenberg({ onBookSelect }) {
