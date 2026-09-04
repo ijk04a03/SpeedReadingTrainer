@@ -23,7 +23,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version:  tra
+          node-version: 22
           cache: npm
 
       - run: npm ci
