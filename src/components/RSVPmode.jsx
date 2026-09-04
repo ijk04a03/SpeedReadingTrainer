@@ -1,29 +1,21 @@
-import { useEffect, useState } from "react";
-import { WPMcontroller, WPM } from "./WPMcontroller";
+import { useEffect, useMemo, useState } from "react";
+import { WPMcontroller } from "./WPMcontroller";
+import { FetchGutenberg } from "./FetchGutenberg";
+import { getDelay, getSavedProgress, getSavedWpm, saveProgress } from "../utils/readingUtils";
 
-let textString = "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Enim reprehenderit totam, ratione nobis laboriosam, cum corporis dolorum pariatur numquam iure vitae molestias. Rem, quis voluptas ipsam enim pariatur quasi quibusdam deserunt fugit? Voluptates, tempora itaque modi, at repellendus aspernatur similique et non tenetur placeat a in nesciunt dolores consectetur ipsa dicta natus, eveniet delectus sunt veritatis molestiae nihil sapiente mollitia."
-let arrOfWords = textString.trim().split(/\s+/);
-const getDelay = (word, wpm) => {
-    const wordDelay = 60000 / wpm;
-
-    if (/\.{3,}$/.test(word)) {
-        return wordDelay * 3; // ellipsis
-    }
-    if (/[.!?]$/.test(word)) {
-        return wordDelay * 2; // sentence ending
-    }
-    if (/[,;:]$/.test(word)) {
-        return wordDelay * 1.5; // short pause
-    }
-    return wordDelay;
-};
-
-
-
+const defaultText = "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Enim reprehenderit totam, ratione nobis laboriosam, cum corporis dolorum pariatur numquam iure vitae molestias. Rem, quis voluptas ipsam enim pariatur quasi quibusdam deserunt fugit? Voluptates, tempora itaque modi, at repellendus aspernatur similique et non tenetur placeat a in nesciunt dolores consectetur ipsa dicta natus, eveniet delectus sunt veritatis molestiae nihil sapiente mollitia."
 const RSVPmode = () => {
+    const [readingText, setReadingText] = useState(defaultText);
+    const [customContent, setCustomContent] = useState(() => localStorage.getItem("speed-reading-custom-content") || "");
+    const [contentKey, setContentKey] = useState("default");
     const [wordToDisplay, setWordToDisplay] = useState("");
     const [isPlaying, setIsPlaying] = useState(false);
-    const [wordIndex, setWordIndex] = useState(0);
+    const [wpm, setWpm] = useState(getSavedWpm);
+    const [wordIndex, setWordIndex] = useState(() => getSavedProgress("default"));
+    const arrOfWords = useMemo(
+        () => readingText.trim().split(/\s+/).filter(Boolean),
+        [readingText],
+    );
     useEffect(() => {
         let timerId;
 
@@ -35,13 +27,17 @@ const RSVPmode = () => {
 
             timerId = setTimeout(() => {
                 setWordIndex((currentIndex) => currentIndex + 1);
-            }, getDelay(word, WPM));
+            }, getDelay(word, wpm));
         };
 
         displayNextWord();
 
         return () => clearTimeout(timerId);
-    }, [isPlaying, wordIndex]);
+    }, [isPlaying, readingText, wordIndex, wpm]);
+
+    useEffect(() => {
+        saveProgress(contentKey, wordIndex);
+    }, [contentKey, wordIndex]);
 
     const play = () => {
         setIsPlaying(true);
@@ -56,11 +52,19 @@ const RSVPmode = () => {
         setWordToDisplay("");
         setIsPlaying(true);
     };
+    const loadContent = (content, nextContentKey = "custom") => {
+        setReadingText(content);
+        setContentKey(nextContentKey);
+        setWordIndex(getSavedProgress(nextContentKey));
+        setWordToDisplay("");
+        setIsPlaying(true);
+    };
+
     const loadCustomContent = () => {
-        const customContent = document.querySelector("#custom-content");
-        textString = customContent.value;
-        arrOfWords = textString.trim().split(/\s+/);
-        replay();
+        if (customContent.trim()) {
+            localStorage.setItem("speed-reading-custom-content", customContent);
+            loadContent(customContent);
+        }
     }
 
     return (
@@ -81,6 +85,7 @@ const RSVPmode = () => {
                     onPlay={play}
                     onPause={pause}
                     onReplay={replay}
+                    onWpmChange={setWpm}
                 />
             </section>
             <aside className="content-selector" aria-labelledby="content-heading">
@@ -90,15 +95,10 @@ const RSVPmode = () => {
                 </div>
                 <form action="" method="get">
                     <label htmlFor="book-select">Reference book</label>
-                    <select name="Select Book" id="book-select" defaultValue="">
-                        <option value="" disabled>-- Choose a book --</option>
-                        <option value="Atomic Habits">Atomic Habits</option>
-                        <option value="The invisible man">The invisible man</option>
-                        <option value="The Almanack of Naval Ravikant">The Almanack of Naval Ravikant</option>
-                    </select>
+                    <FetchGutenberg onBookSelect={loadContent} />
 
                     <label htmlFor="custom-content">Custom content</label>
-                    <textarea name="custom-content" id="custom-content" placeholder="Paste an article, chapter, or notes here..." />
+                    <textarea name="custom-content" id="custom-content" value={customContent} onChange={(event) => setCustomContent(event.target.value)} placeholder="Paste an article, chapter, or notes here..." />
 
                     <button className="load-content-btn" type="button" onClick={loadCustomContent}>Load reading material</button>
                 </form>

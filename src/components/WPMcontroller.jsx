@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Play, Pause, RotateCcw } from "lucide-react";
-let WPM = 200;
+import { getSavedWpm } from "../utils/readingUtils";
 const WPMcontroller = ({
     onPlay,
     onPause,
     onReplay,
+    onWpmChange,
 }) => {
-    const [wpm, setWpm] = useState(WPM);
+    const [wpm, setWpm] = useState(getSavedWpm);
     return (
         <section className="controls">
             <div className="slider-container">
@@ -21,19 +22,19 @@ const WPMcontroller = ({
                     onChange={(event) => {
                         const nextWpm = Number(event.target.value);
                         setWpm(nextWpm);
-                        WPM = nextWpm;
+                        localStorage.setItem("speed-reading-wpm", String(nextWpm));
+                        onWpmChange?.(nextWpm);
                     }}
                 />
 
                 <p>Value: <span>{wpm}</span></p>
             </div>
             <div>
-                <button type="button" id="play" style={{ background: "none", border: "none" }} onClick={onPlay} aria-label="Play"><Play fill="Green" stroke="none" /></button>
-                <button type="button" id="pause" style={{ background: "none", border: "none" }} onClick={onPause} aria-label="Pause"><Pause fill="white" stroke="none" /></button>
-                <button type="button" id="replay" style={{ background: "none", border: "none" }} onClick={onReplay} aria-label="Replay"><RotateCcw color="blue" stroke="blue" /></button>
+                <button type="button" className="play" onClick={onPlay} aria-label="Play"><Play /></button>
+                <button type="button" className="pause" onClick={onPause} aria-label="Pause"><Pause /></button>
+                <button type="button" className="replay" onClick={onReplay} aria-label="Replay"><RotateCcw /></button>
             </div>
         </section>
     );
 };
-export { WPM, WPMcontroller };
-// export default WPMcontroller;
+export { WPMcontroller };
