@@ -5,10 +5,11 @@ import { getDelay, getSavedProgress, getSavedWpm, saveProgress } from "../utils/
 
 const defaultText = "Reading becomes easier when your eyes follow a steady rhythm. Let the page move at a comfortable pace while your attention stays with the meaning of each sentence. The goal is not to rush past the words. It is to give your eyes a clear path so that each phrase arrives at the right moment. Keep your shoulders relaxed, breathe normally, and allow the highlighted stream to carry you forward. With practice, your eyes begin to anticipate groups of words instead of stopping at every single one. That small change can make reading feel lighter and more natural. Stay curious about the ideas on the page, notice the shape of the argument, and let the pace support your understanding. If your focus drifts, pause for a moment and begin again from the current page. A steady rhythm is more useful than a frantic speed, and consistency is what turns a short exercise into a lasting reading habit. Choose a book when you are ready, or paste your own material into the content panel to keep practicing with text that matters to you.";
 
-function GuidedPacer() {
+function GuidedPacer({ zenMode = false }) {
     const [readingText, setReadingText] = useState(defaultText);
     const [customContent, setCustomContent] = useState("");
     const [contentKey, setContentKey] = useState("default");
+    const [contentTitle, setContentTitle] = useState(() => localStorage.getItem("speed-reading-selected-book-title") || "Practice text");
     const [wordIndex, setWordIndex] = useState(() => getSavedProgress("default"));
     const [isPlaying, setIsPlaying] = useState(false);
     const [wpm, setWpm] = useState(getSavedWpm);
@@ -27,7 +28,10 @@ function GuidedPacer() {
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
         if (!context) return [words];
-        context.font = '400 21px "Inter", sans-serif';
+        const fontSize = zenMode
+            ? Math.min(30, Math.max(18, window.innerWidth * 0.022))
+            : 21;
+        context.font = `400 ${fontSize}px "Inter", sans-serif`;
         const lineList = [];
         let currentLine = [];
         let currentWidth = 0;
@@ -50,7 +54,7 @@ function GuidedPacer() {
         }
 
         return lineList;
-    }, [words, lineWidth]);
+    }, [words, lineWidth, zenMode]);
     const retainedWords = Math.ceil((wpm * 20) / 60);
     const lineStarts = useMemo(() => {
         let wordOffset = 0;
@@ -127,9 +131,10 @@ function GuidedPacer() {
         }
     }, [currentLineIndex, visibleStartLine, wpm, currentDelay]);
 
-    const loadContent = (content, nextContentKey = "custom") => {
+    const loadContent = (content, nextContentKey = "custom", nextContentTitle = "Custom text") => {
         setReadingText(content);
         setContentKey(nextContentKey);
+        setContentTitle(nextContentTitle);
         setWordIndex(getSavedProgress(nextContentKey));
         setIsPlaying(false);
         lastScrollLine.current = null;
@@ -139,7 +144,7 @@ function GuidedPacer() {
     const loadCustomContent = () => {
         if (customContent.trim()) {
             localStorage.setItem("speed-reading-custom-content", customContent);
-            loadContent(customContent);
+            loadContent(customContent, "custom", "Custom text");
         }
     };
 
@@ -151,10 +156,11 @@ function GuidedPacer() {
     };
 
     return (
-        <main className="rsvp-workspace">
+        <main className={zenMode ? "rsvp-workspace zen-workspace" : "rsvp-workspace"}>
             <section className="rsvp-panel" aria-labelledby="guided-pacer-heading">
                 <p className="rsvp-kicker">Guided pacing</p>
                 <h1 id="guided-pacer-heading">Follow the highlighted word</h1>
+                <p className="now-reading">Now reading: <strong>{contentTitle}</strong></p>
                 <div
                     className="guided-text"
                     ref={guidedTextRef}
@@ -199,7 +205,7 @@ function GuidedPacer() {
                     onWpmChange={setWpm}
                 />
             </section>
-            <aside className="content-selector" aria-labelledby="guided-content-heading">
+            {!zenMode && <aside className="content-selector" aria-labelledby="guided-content-heading">
                 <div className="content-selector-header">
                     <p className="rsvp-kicker">Your reading material</p>
                     <h2 id="guided-content-heading">Choose your content</h2>
@@ -216,7 +222,7 @@ function GuidedPacer() {
                     />
                     <button className="load-content-btn" type="button" onClick={loadCustomContent}>Load reading material</button>
                 </form>
-            </aside>
+            </aside>}
         </main>
     );
 }

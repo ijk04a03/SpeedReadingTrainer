@@ -4,10 +4,11 @@ import { FetchGutenberg } from "./FetchGutenberg";
 import { getDelay, getSavedProgress, getSavedWpm, saveProgress } from "../utils/readingUtils";
 
 const defaultText = "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Enim reprehenderit totam, ratione nobis laboriosam, cum corporis dolorum pariatur numquam iure vitae molestias. Rem, quis voluptas ipsam enim pariatur quasi quibusdam deserunt fugit? Voluptates, tempora itaque modi, at repellendus aspernatur similique et non tenetur placeat a in nesciunt dolores consectetur ipsa dicta natus, eveniet delectus sunt veritatis molestiae nihil sapiente mollitia."
-const RSVPmode = () => {
+const RSVPmode = ({ zenMode = false }) => {
     const [readingText, setReadingText] = useState(defaultText);
     const [customContent, setCustomContent] = useState(() => localStorage.getItem("speed-reading-custom-content") || "");
     const [contentKey, setContentKey] = useState("default");
+    const [contentTitle, setContentTitle] = useState(() => localStorage.getItem("speed-reading-selected-book-title") || "Practice text");
     const [wordToDisplay, setWordToDisplay] = useState("");
     const [isPlaying, setIsPlaying] = useState(false);
     const [wpm, setWpm] = useState(getSavedWpm);
@@ -33,7 +34,7 @@ const RSVPmode = () => {
         displayNextWord();
 
         return () => clearTimeout(timerId);
-    }, [isPlaying, readingText, wordIndex, wpm]);
+    }, [arrOfWords, isPlaying, wordIndex, wpm]);
 
     useEffect(() => {
         saveProgress(contentKey, wordIndex);
@@ -52,9 +53,10 @@ const RSVPmode = () => {
         setWordToDisplay("");
         setIsPlaying(true);
     };
-    const loadContent = (content, nextContentKey = "custom") => {
+    const loadContent = (content, nextContentKey = "custom", nextContentTitle = "Custom text") => {
         setReadingText(content);
         setContentKey(nextContentKey);
+        setContentTitle(nextContentTitle);
         setWordIndex(getSavedProgress(nextContentKey));
         setWordToDisplay("");
         setIsPlaying(true);
@@ -63,15 +65,16 @@ const RSVPmode = () => {
     const loadCustomContent = () => {
         if (customContent.trim()) {
             localStorage.setItem("speed-reading-custom-content", customContent);
-            loadContent(customContent);
+            loadContent(customContent, "custom", "Custom text");
         }
     }
 
     return (
-        <main className="rsvp-workspace">
+        <main className={zenMode ? "rsvp-workspace zen-workspace" : "rsvp-workspace"}>
             <section className="rsvp-panel" aria-labelledby="rsvp-heading">
                 <p className="rsvp-kicker">Rapid serial visual presentation</p>
                 <h1 id="rsvp-heading">Read one word at a time</h1>
+                <p className="now-reading">Now reading: <strong>{contentTitle}</strong></p>
                 <p className="rsvp-instruction">Focus on the red letter and let the words move at their own pace.</p>
                 <div className="rsvp-display-cont">
 
@@ -88,7 +91,7 @@ const RSVPmode = () => {
                     onWpmChange={setWpm}
                 />
             </section>
-            <aside className="content-selector" aria-labelledby="content-heading">
+            {!zenMode && <aside className="content-selector" aria-labelledby="content-heading">
                 <div className="content-selector-header">
                     <p className="rsvp-kicker">Your reading material</p>
                     <h2 id="content-heading">Choose your content</h2>
@@ -102,7 +105,7 @@ const RSVPmode = () => {
 
                     <button className="load-content-btn" type="button" onClick={loadCustomContent}>Load reading material</button>
                 </form>
-            </aside>
+            </aside>}
         </main>
     );
 };

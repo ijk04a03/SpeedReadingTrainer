@@ -43,6 +43,7 @@ function FetchGutenberg({ onBookSelect }) {
 
         setSelectedBook(String(book.id));
         localStorage.setItem("speed-reading-selected-book", String(book.id));
+        localStorage.setItem("speed-reading-selected-book-title", book.title);
         setBookLoading(true);
         setError("");
 
@@ -57,7 +58,7 @@ function FetchGutenberg({ onBookSelect }) {
             if (text.length <= 2_000_000) {
                 localStorage.setItem(`speed-reading-book-${book.id}`, text);
             }
-            onBookSelectRef.current(text, String(book.id));
+            onBookSelectRef.current(text, String(book.id), book.title);
         } catch (error) {
             setError(error.message);
         } finally {
@@ -93,7 +94,7 @@ function FetchGutenberg({ onBookSelect }) {
 
                     if (savedBook && cachedText) {
                         setSelectedBook(savedBookId);
-                        onBookSelectRef.current(cachedText, savedBookId);
+                        onBookSelectRef.current(cachedText, savedBookId, savedBook.title);
                     }
                 }
             } catch (error) {
