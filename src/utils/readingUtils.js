@@ -29,4 +29,48 @@ function getSavedWpm() {
     return savedWpm >= 200 && savedWpm <= 900 ? savedWpm : 200;
 }
 
-export { getDelay, getSavedProgress, getSavedWpm, saveProgress };
+function getPracticeStats() {
+    try {
+        return JSON.parse(localStorage.getItem("speed-reading-stats")) || {
+            totalSeconds: 0,
+            bestWpm: 0,
+            practiceDays: [],
+        };
+    } catch {
+        return { totalSeconds: 0, bestWpm: 0, practiceDays: [] };
+    }
+}
+
+function savePracticeStats(stats) {
+    localStorage.setItem("speed-reading-stats", JSON.stringify(stats));
+}
+
+function recordPracticeSecond() {
+    const stats = getPracticeStats();
+    const today = new Date().toISOString().slice(0, 10);
+    const practiceDays = stats.practiceDays.includes(today)
+        ? stats.practiceDays
+        : [...stats.practiceDays, today];
+
+    savePracticeStats({
+        ...stats,
+        totalSeconds: stats.totalSeconds + 1,
+        practiceDays,
+    });
+}
+
+function recordBestWpm(wpm) {
+    const stats = getPracticeStats();
+    if (wpm <= stats.bestWpm) return;
+    savePracticeStats({ ...stats, bestWpm: wpm });
+}
+
+export {
+    getDelay,
+    getSavedProgress,
+    getSavedWpm,
+    getPracticeStats,
+    recordBestWpm,
+    recordPracticeSecond,
+    saveProgress,
+};

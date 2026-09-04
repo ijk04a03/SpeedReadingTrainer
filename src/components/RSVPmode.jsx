@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { WPMcontroller } from "./WPMcontroller";
 import { FetchGutenberg } from "./FetchGutenberg";
-import { getDelay, getSavedProgress, getSavedWpm, saveProgress } from "../utils/readingUtils";
+import {
+    getDelay,
+    getSavedProgress,
+    getSavedWpm,
+    recordBestWpm,
+    recordPracticeSecond,
+    saveProgress,
+} from "../utils/readingUtils";
 
 const defaultText = "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Enim reprehenderit totam, ratione nobis laboriosam, cum corporis dolorum pariatur numquam iure vitae molestias. Rem, quis voluptas ipsam enim pariatur quasi quibusdam deserunt fugit? Voluptates, tempora itaque modi, at repellendus aspernatur similique et non tenetur placeat a in nesciunt dolores consectetur ipsa dicta natus, eveniet delectus sunt veritatis molestiae nihil sapiente mollitia."
 const RSVPmode = ({ zenMode = false }) => {
@@ -39,6 +46,16 @@ const RSVPmode = ({ zenMode = false }) => {
     useEffect(() => {
         saveProgress(contentKey, wordIndex);
     }, [contentKey, wordIndex]);
+
+    useEffect(() => {
+        recordBestWpm(wpm);
+    }, [wpm]);
+
+    useEffect(() => {
+        if (!isPlaying || wordIndex >= arrOfWords.length) return undefined;
+        const intervalId = setInterval(recordPracticeSecond, 1000);
+        return () => clearInterval(intervalId);
+    }, [arrOfWords.length, isPlaying, wordIndex]);
 
     const play = () => {
         setIsPlaying(true);
